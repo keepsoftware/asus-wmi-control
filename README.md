@@ -12,15 +12,15 @@ To install and use this module using dkms:
 
 2. Create a directory for the module and download the source code
    ```
-   sudo mkdir /usr/src/asus-wmi-control
-   cd /usr/src/asus-wmi-control
+   sudo mkdir /usr/src/asus-wmi-1.0
+   cd /usr/src/asus-wmi-1.0
    sudo wget 'https://github.com/Plippo/asus-wmi-screenpad/archive/master.zip'
    sudo unzip master.zip
    sudo mv asus-wmi-screenpad-master/* .
    sudo rmdir asus-wmi-screenpad-master
    sudo rm master.zip
    ```
-   Now the source code should be in `/usr/src/asus-wmi-control`. It's important that the folder is called exactly like that because DKMS expects that.
+   Now the source code should be in `/usr/src/asus-wmi-1.0`. It's important that the folder is called exactly like that because DKMS expects that.
    Alternatively you can of course also clone this git repository into that folder.
 
 3. If not using kernel 5.4: Call the following script to download and patch files fitting to your kernel version
@@ -35,8 +35,11 @@ To install and use this module using dkms:
 
 5. Build and install the module to the current kernel
    ```
+   sudo rmmod asus_nb_wmi asus_wmi
+   sudo dkms remove -m asus-wmi -v 1.0 --all
    sudo dkms build -m asus-wmi -v 1.0
    sudo dkms install -m asus-wmi -v 1.0
+   sudo modprobe asus_wmi asus_nb_wmi 
    ```
    From now on, DKMS will automatically rebuild the module on every kernel update.
 
@@ -102,7 +105,7 @@ then rebuild as above.
 If you want to re-download and reinstall the kernel module (maybe because there have been changes in the code), you have to remove the old one first, calling
 ```
 sudo dkms remove -m asus-wmi -v 1.0 --all
-sudo rm -r /usr/src/asus-wmi-control
+sudo rm -r /usr/src/asus-wmi-1.0
 ```
 Then repeat the steps above from step 2 on.
 
