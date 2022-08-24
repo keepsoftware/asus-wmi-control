@@ -20,7 +20,6 @@
 #define ASUS_WMI_KEY_IGNORE (-1)
 #define ASUS_WMI_BRN_DOWN	0x20
 #define ASUS_WMI_BRN_UP		0x2f
-#define ASUS_WMI_DEVID_MICMUTE_LED		0x00040017
 
 struct module;
 struct key_entry;

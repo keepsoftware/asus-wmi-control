@@ -208,7 +208,6 @@ struct asus_wmi {
 	int kbd_led_wk;
 	struct led_classdev lightbar_led;
 	int lightbar_led_wk;
-	struct led_classdev micmute_led;
 	struct workqueue_struct *led_workqueue;
 	struct work_struct tpd_led_work;
 	struct work_struct wlan_led_work;
@@ -1029,23 +1028,12 @@ static enum led_brightness lightbar_led_get(struct led_classdev *led_cdev)
 	return result & ASUS_WMI_DSTS_LIGHTBAR_MASK;
 }
 
-static int micmute_led_set(struct led_classdev *led_cdev,
-			   enum led_brightness brightness)
-{
-	int state = brightness != LED_OFF;
-	int err;
-
-	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_MICMUTE_LED, state, NULL);
-	return err < 0 ? err : 0;
-}
-
 static void asus_wmi_led_exit(struct asus_wmi *asus)
 {
 	led_classdev_unregister(&asus->kbd_led);
 	led_classdev_unregister(&asus->tpd_led);
 	led_classdev_unregister(&asus->wlan_led);
 	led_classdev_unregister(&asus->lightbar_led);
-	led_classdev_unregister(&asus->micmute_led);
 
 	if (asus->led_workqueue)
 		destroy_workqueue(asus->led_workqueue);
@@ -1115,19 +1103,6 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 
 		rv = led_classdev_register(&asus->platform_device->dev,
 					   &asus->lightbar_led);
-	}
-
-	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
-		asus->micmute_led.name = "asus::micmute";
-		asus->micmute_led.max_brightness = 1;
-		asus->micmute_led.brightness = ledtrig_audio_get(LED_AUDIO_MICMUTE);
-		asus->micmute_led.brightness_set_blocking = micmute_led_set;
-		asus->micmute_led.default_trigger = "audio-micmute";
-
-		rv = led_classdev_register(&asus->platform_device->dev,
-						&asus->micmute_led);
-		if (rv)
-			goto error;
 	}
 
 error:
@@ -2559,7 +2534,7 @@ static struct attribute *asus_fan_curve_attr[] = {
 static umode_t asus_fan_curve_is_visible(struct kobject *kobj,
 					 struct attribute *attr, int idx)
 {
-	struct device *dev = kobj_to_dev(kobj);
+	struct device *dev = container_of(kobj, struct device, kobj);
 	struct asus_wmi *asus = dev_get_drvdata(dev->parent);
 
 	/*
@@ -3139,7 +3114,7 @@ static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
 
 	if (!sparse_keymap_report_event(asus->inputdev, code,
 					key_value, autorelease))
-		pr_info("Unknown key code 0x%x\n", code);
+		pr_info("Unknown key %x pressed\n", code);
 }
 
 static void asus_wmi_notify(u32 value, void *context)
