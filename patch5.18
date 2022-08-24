@@ -1,0 +1,71 @@
+diff -Naur orig/asus-wmi.c new/asus-wmi.c
+--- orig/asus-wmi.c	2022-08-24 16:24:49.863303618 +0000
++++ new/asus-wmi.c	2022-08-24 16:21:28.857804046 +0000
+@@ -208,6 +208,7 @@
+ 	int kbd_led_wk;
+ 	struct led_classdev lightbar_led;
+ 	int lightbar_led_wk;
++	struct led_classdev micmute_led;
+ 	struct workqueue_struct *led_workqueue;
+ 	struct work_struct tpd_led_work;
+ 	struct work_struct wlan_led_work;
+@@ -1028,12 +1029,25 @@
+ 	return result & ASUS_WMI_DSTS_LIGHTBAR_MASK;
+ }
+ 
++static int micmute_led_set(struct led_classdev *led_cdev,
++			   enum led_brightness brightness)
++{
++	int state = brightness != LED_OFF;
++	int err;
++
++	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_MICMUTE_LED, state, NULL);
++	pr_info("%s: brightness : %d, state: %d, err=%d\n", __func__, brightness, state, err);
++	return err < 0 ? err : 0;
++}
++
+ static void asus_wmi_led_exit(struct asus_wmi *asus)
+ {
+ 	led_classdev_unregister(&asus->kbd_led);
+ 	led_classdev_unregister(&asus->tpd_led);
+ 	led_classdev_unregister(&asus->wlan_led);
+ 	led_classdev_unregister(&asus->lightbar_led);
++	led_classdev_unregister(&asus->micmute_led);
++
+ 
+ 	if (asus->led_workqueue)
+ 		destroy_workqueue(asus->led_workqueue);
+@@ -1105,6 +1119,19 @@
+ 					   &asus->lightbar_led);
+ 	}
+ 
++	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
++		asus->micmute_led.name = "asus::micmute";
++		asus->micmute_led.max_brightness = 1;
++		asus->micmute_led.brightness = ledtrig_audio_get(LED_AUDIO_MICMUTE);
++		asus->micmute_led.brightness_set_blocking = micmute_led_set;
++		asus->micmute_led.default_trigger = "audio-micmute";
++
++		rv = led_classdev_register(&asus->platform_device->dev,
++						&asus->micmute_led);
++		if (rv)
++			goto error;
++	}
++
+ error:
+ 	if (rv)
+ 		asus_wmi_led_exit(asus);
+diff -Naur orig/asus-wmi.h new/asus-wmi.h
+--- orig/asus-wmi.h	2022-08-24 16:24:49.863303618 +0000
++++ new/asus-wmi.h	2022-08-24 16:23:18.102963070 +0000
+@@ -20,6 +20,10 @@
+ #define ASUS_WMI_KEY_IGNORE (-1)
+ #define ASUS_WMI_BRN_DOWN	0x20
+ #define ASUS_WMI_BRN_UP		0x2f
++#define ASUS_WMI_DEVID_MICMUTE_LED		0x00040017
++
++/* Backlight and Brightness */
++#define ASUS_WMI_DEVID_ALS_ENABLE	0x00050001 /* Ambient Light Sensor */
+ 
+ struct module;
+ struct key_entry;
