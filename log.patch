@@ -1,0 +1,25 @@
+diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
+index 6e5156a9639b..5a9ab5e40dd7 100644
+--- a/drivers/platform/x86/asus-wmi.c
++++ b/drivers/platform/x86/asus-wmi.c
+@@ -931,7 +931,7 @@ static void asus_wmi_led_exit(struct asus_wmi *asus)
+ 
+ static int asus_wmi_led_init(struct asus_wmi *asus)
+ {
+-	int rv = 0, led_val;
++	int rv = 0, led_val, value;
+ 
+ 	asus->led_workqueue = create_singlethread_workqueue("led_workqueue");
+ 	if (!asus->led_workqueue)
+@@ -995,6 +995,11 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+ 					   &asus->lightbar_led);
+ 	}
+ 
++	rv = asus_wmi_get_devstate(asus, ASUS_WMI_DEVID_CAMERA, &value);
++	printk(KERN_ERR "PADDY: %s: camera: rv=%d, value=0x%08X", __func__, rv, value);
++	rv = asus_wmi_get_devstate(asus, ASUS_WMI_DEVID_MICMUTE_LED, &value);
++	printk(KERN_ERR "PADDY: %s: micmute: rv=%d, value=0x%08X", __func__, rv, value);
++
+ 	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
+ 		asus->micmute_led.name = "platform::micmute";
+ 		asus->micmute_led.max_brightness = 1;

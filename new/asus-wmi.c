@@ -1055,7 +1055,7 @@ static void asus_wmi_led_exit(struct asus_wmi *asus)
 
 static int asus_wmi_led_init(struct asus_wmi *asus)
 {
-	int rv = 0, led_val;
+	int rv = 0, led_val, value;
 
 	asus->led_workqueue = create_singlethread_workqueue("led_workqueue");
 	if (!asus->led_workqueue)
@@ -1118,6 +1118,12 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 		rv = led_classdev_register(&asus->platform_device->dev,
 					   &asus->lightbar_led);
 	}
+
+	rv = asus_wmi_get_devstate(asus, ASUS_WMI_DEVID_CAMERA, &value);
+	printk(KERN_ERR "PADDY: %s: camera: rv=%d, value=0x%08X", __func__, rv, value);
+	rv = asus_wmi_get_devstate(asus, ASUS_WMI_DEVID_MICMUTE_LED, &value);
+	printk(KERN_ERR "PADDY: %s: micmute: rv=%d, value=0x%08X", __func__, rv, value);
+
 
 	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
 		asus->micmute_led.name = "asus::micmute";
