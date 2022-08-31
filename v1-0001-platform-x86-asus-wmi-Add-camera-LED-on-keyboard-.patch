@@ -1,0 +1,101 @@
+From da72b4f3f6d53f2676f2d7d14ec554fbc9961d2e Mon Sep 17 00:00:00 2001
+From: PaddyKP_Yao <PaddyKP_Yao@asus.com>
+Date: Wed, 31 Aug 2022 10:44:25 +0800
+Subject: [PATCH v1 1/1] platform/x86: asus-wmi: Add camera LED on keyboard
+ classdev support
+
+TBD
+
+Signed-off-by: PaddyKP_Yao <PaddyKP_Yao@asus.com>
+---
+ drivers/platform/x86/Kconfig               |  1 +
+ drivers/platform/x86/asus-wmi.c            | 27 ++++++++++++++++++++++
+ include/linux/platform_data/x86/asus-wmi.h |  1 +
+ 3 files changed, 29 insertions(+)
+
+diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
+index 74769050b770..90f1839c26e8 100644
+--- a/drivers/platform/x86/Kconfig
++++ b/drivers/platform/x86/Kconfig
+@@ -276,6 +276,7 @@ config ASUS_WMI
+ 	select NEW_LEDS
+ 	select LEDS_TRIGGERS
+ 	select LEDS_TRIGGER_AUDIO
++	select LEDS_TRIGGER_CAMERA
+ 	select ACPI_PLATFORM_PROFILE
+ 	help
+ 	  Say Y here if you have a WMI aware Asus laptop (like Eee PCs or new
+diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
+index 6e5156a9639b..4edb515bf559 100644
+--- a/drivers/platform/x86/asus-wmi.c
++++ b/drivers/platform/x86/asus-wmi.c
+@@ -192,6 +192,7 @@ struct asus_wmi {
+ 	struct led_classdev lightbar_led;
+ 	int lightbar_led_wk;
+ 	struct led_classdev micmute_led;
++	struct led_classdev camera_led_on_keyboard;
+ 	struct workqueue_struct *led_workqueue;
+ 	struct work_struct tpd_led_work;
+ 	struct work_struct wlan_led_work;
+@@ -917,6 +918,17 @@ static int micmute_led_set(struct led_classdev *led_cdev,
+ 	return err < 0 ? err : 0;
+ }
+ 
++static int camera_led_on_keyboard_set(struct led_classdev *led_cdev,
++			   enum led_brightness brightness)
++{
++	int state = brightness != LED_OFF;
++	int err;
++
++	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD,
++				state, NULL);
++	return err < 0 ? err : 0;
++}
++
+ static void asus_wmi_led_exit(struct asus_wmi *asus)
+ {
+ 	led_classdev_unregister(&asus->kbd_led);
+@@ -924,6 +936,7 @@ static void asus_wmi_led_exit(struct asus_wmi *asus)
+ 	led_classdev_unregister(&asus->wlan_led);
+ 	led_classdev_unregister(&asus->lightbar_led);
+ 	led_classdev_unregister(&asus->micmute_led);
++	led_classdev_unregister(&asus->camera_led_on_keyboard);
+ 
+ 	if (asus->led_workqueue)
+ 		destroy_workqueue(asus->led_workqueue);
+@@ -1008,6 +1021,20 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+ 			goto error;
+ 	}
+ 
++	if (asus_wmi_dev_is_present(asus,
++			ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
++		asus->camera_led_on_keyboard.name = "platform::camera";
++		asus->camera_led_on_keyboard.max_brightness = 1;
++		asus->camera_led_on_keyboard.brightness_set_blocking =
++						camera_led_on_keyboard_set;
++		asus->camera_led_on_keyboard.default_trigger = "torch";
++
++		rv = led_classdev_register(&asus->platform_device->dev,
++						&asus->camera_led_on_keyboard);
++		if (rv)
++			goto error;
++	}
++
+ error:
+ 	if (rv)
+ 		asus_wmi_led_exit(asus);
+diff --git a/include/linux/platform_data/x86/asus-wmi.h b/include/linux/platform_data/x86/asus-wmi.h
+index 38ee75874d11..d30d3ceecf08 100644
+--- a/include/linux/platform_data/x86/asus-wmi.h
++++ b/include/linux/platform_data/x86/asus-wmi.h
+@@ -65,6 +65,7 @@
+ #define ASUS_WMI_DEVID_PANEL_OD		0x00050019
+ #define ASUS_WMI_DEVID_CAMERA		0x00060013
+ #define ASUS_WMI_DEVID_LID_FLIP		0x00060062
++#define ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD		0x00060079
+ 
+ /* Storage */
+ #define ASUS_WMI_DEVID_CARDREADER	0x00080013
+-- 
+2.34.1
+

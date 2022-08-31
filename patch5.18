@@ -1,15 +1,16 @@
 diff -Naur orig/asus-wmi.c new/asus-wmi.c
---- orig/asus-wmi.c	2022-08-24 16:24:49.863303618 +0000
-+++ new/asus-wmi.c	2022-08-24 16:21:28.857804046 +0000
-@@ -208,6 +208,7 @@
+--- orig/asus-wmi.c	2022-08-24 16:49:02.714113622 +0000
++++ new/asus-wmi.c	2022-08-31 12:34:13.335258814 +0000
+@@ -208,6 +208,8 @@
  	int kbd_led_wk;
  	struct led_classdev lightbar_led;
  	int lightbar_led_wk;
 +	struct led_classdev micmute_led;
++	struct led_classdev camera_led_on_keyboard;
  	struct workqueue_struct *led_workqueue;
  	struct work_struct tpd_led_work;
  	struct work_struct wlan_led_work;
-@@ -1028,12 +1029,25 @@
+@@ -1028,12 +1030,37 @@
  	return result & ASUS_WMI_DSTS_LIGHTBAR_MASK;
  }
  
@@ -24,6 +25,17 @@ diff -Naur orig/asus-wmi.c new/asus-wmi.c
 +	return err < 0 ? err : 0;
 +}
 +
++static int camera_led_on_keyboard_set(struct led_classdev *led_cdev,
++			   enum led_brightness brightness)
++{
++	int state = brightness != LED_OFF;
++	int err;
++
++	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD,
++				state, NULL);
++	return err < 0 ? err : 0;
++}
++
  static void asus_wmi_led_exit(struct asus_wmi *asus)
  {
  	led_classdev_unregister(&asus->kbd_led);
@@ -31,14 +43,55 @@ diff -Naur orig/asus-wmi.c new/asus-wmi.c
  	led_classdev_unregister(&asus->wlan_led);
  	led_classdev_unregister(&asus->lightbar_led);
 +	led_classdev_unregister(&asus->micmute_led);
++	led_classdev_unregister(&asus->camera_led_on_keyboard);
 +
  
  	if (asus->led_workqueue)
  		destroy_workqueue(asus->led_workqueue);
-@@ -1105,6 +1119,19 @@
+@@ -1041,7 +1068,7 @@
+ 
+ static int asus_wmi_led_init(struct asus_wmi *asus)
+ {
+-	int rv = 0, led_val;
++	int rv = 0, led_val, value;
+ 
+ 	asus->led_workqueue = create_singlethread_workqueue("led_workqueue");
+ 	if (!asus->led_workqueue)
+@@ -1061,6 +1088,20 @@
+ 			goto error;
+ 	}
+ 
++	if (asus_wmi_dev_is_present(asus,
++			ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
++		asus->camera_led_on_keyboard.name = "platform::camera";
++		asus->camera_led_on_keyboard.max_brightness = 1;
++		asus->camera_led_on_keyboard.brightness_set_blocking =
++						camera_led_on_keyboard_set;
++		asus->camera_led_on_keyboard.default_trigger = "torch";
++
++		rv = led_classdev_register(&asus->platform_device->dev,
++						&asus->camera_led_on_keyboard);
++		if (rv)
++			goto error;
++	}
++
+ 	if (!kbd_led_read(asus, &led_val, NULL)) {
+ 		asus->kbd_led_wk = led_val;
+ 		asus->kbd_led.name = "asus::kbd_backlight";
+@@ -1105,6 +1146,29 @@
  					   &asus->lightbar_led);
  	}
  
++	// rv = asus_wmi_get_devstate(asus, ASUS_WMI_DEVID_CAMERA, &value);
++	// printk(KERN_ERR "PADDY: %s: camera: rv=%d, value=0x%08X", __func__, rv, value);
++	// rv = asus_wmi_get_devstate(asus, 0x00060078, &value);
++	// printk(KERN_ERR "PADDY: %s: camera #2: rv=%d, value=0x%08X", __func__, rv, value);
++	// rv = asus_wmi_get_devstate(asus, 0x00060079, &value);
++	// printk(KERN_ERR "PADDY: %s: camera #3: rv=%d, value=0x%08X", __func__, rv, value);
++	// rv = asus_wmi_get_devstate(asus, ASUS_WMI_DEVID_MICMUTE_LED, &value);
++	// printk(KERN_ERR "PADDY: %s: micmute: rv=%d, value=0x%08X", __func__, rv, value);
++
++
 +	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
 +		asus->micmute_led.name = "asus::micmute";
 +		asus->micmute_led.max_brightness = 1;
@@ -56,13 +109,14 @@ diff -Naur orig/asus-wmi.c new/asus-wmi.c
  	if (rv)
  		asus_wmi_led_exit(asus);
 diff -Naur orig/asus-wmi.h new/asus-wmi.h
---- orig/asus-wmi.h	2022-08-24 16:24:49.863303618 +0000
-+++ new/asus-wmi.h	2022-08-24 16:23:18.102963070 +0000
-@@ -20,6 +20,10 @@
+--- orig/asus-wmi.h	2022-08-24 16:49:02.714113622 +0000
++++ new/asus-wmi.h	2022-08-31 12:30:34.891443657 +0000
+@@ -20,6 +20,11 @@
  #define ASUS_WMI_KEY_IGNORE (-1)
  #define ASUS_WMI_BRN_DOWN	0x20
  #define ASUS_WMI_BRN_UP		0x2f
 +#define ASUS_WMI_DEVID_MICMUTE_LED		0x00040017
++#define ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD		0x00060079
 +
 +/* Backlight and Brightness */
 +#define ASUS_WMI_DEVID_ALS_ENABLE	0x00050001 /* Ambient Light Sensor */

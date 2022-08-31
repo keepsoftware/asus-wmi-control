@@ -35,11 +35,14 @@ To install and use this module using dkms:
 
 5. Build and install the module to the current kernel
    ```
-   sudo rmmod asus_nb_wmi asus_wmi
+   sudo rmmod asus_nb_wmi
+   sudo rmmod asus_wmi
    sudo dkms remove -m asus-wmi -v 1.0 --all
    sudo dkms build -m asus-wmi -v 1.0
    sudo dkms install -m asus-wmi -v 1.0
-   sudo modprobe asus_wmi asus_nb_wmi 
+   sudo modprobe asus_wmi 
+   sudo modprobe asus_nb_wmi
+   sudo dmesg
    ```
    From now on, DKMS will automatically rebuild the module on every kernel update.
 
