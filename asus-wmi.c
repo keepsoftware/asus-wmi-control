@@ -3042,6 +3042,8 @@ static void asus_wmi_handle_event_code(int code, struct asus_wmi *asus)
 
 	orig_code = code;
 
+    pr_info("apt_DEBUG key %x pressed\n", code);
+
 	if (asus->driver->key_filter) {
 		asus->driver->key_filter(asus->driver, &code, &key_value,
 					 &autorelease);
