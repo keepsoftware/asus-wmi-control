@@ -5,6 +5,7 @@ VERSION="6.0"
 wget "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/drivers/platform/x86/asus-wmi.c?h=linux-$VERSION.y" -O './orig/asus-wmi.c'
 wget "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/drivers/platform/x86/asus-wmi.h?h=linux-$VERSION.y" -O './orig/asus-wmi.h'
 wget "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/drivers/platform/x86/asus-nb-wmi.c?h=linux-$VERSION.y" -O './orig/asus-nb-wmi.c'
+#wget "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/drivers/platform/x86/asus-wireless.c?h=linux-$VERSION.y" -O './orig/asus-wireless.c'
 
 cd new
 cp -a ../orig/* .

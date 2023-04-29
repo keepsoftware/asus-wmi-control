@@ -113,4 +113,12 @@ sudo rm -r /usr/src/asus-wmi-1.0
 Then repeat the steps above from step 2 on.
 
 ### Major kernel updates
-After a major kernel update (e.g. from 5.8 to 5.10), DKMS cannot update the module automatically as the new kernel sources need to be downloaded and patched. In this case, please uninstall and reinstall the module as described above under *Removing or reinstalling*.
+After a major kernel update (e.g. from 5.8 to 5.10), DKMS cannot update the module automatically as the new kernel sources need to be downloaded and patched. In this case, please uninstall and reinstcd all the module as described above under *Removing or reinstalling*.
+
+# Radio Airplane
+https://github.com/endlessm/linux/commit/06341ab17e0b0ee9aa9d02108f5995e99045eb4d
+
+# Command to send events like key pressed
+xdotool key XF86MonBrightnessUp
+xdotool key XF86MonBrightnessDown
+
