@@ -17,6 +17,8 @@ elif { echo $VERSION ; echo "5.18" ; } | sort -V -c 2>/dev/null
   PATCHFILE="patch5.18"
 elif { echo $VERSION ; echo "6.0" ; } | sort -V -c 2>/dev/null
   PATCHFILE="patch6.0"
+elif { echo $VERSION ; echo "6.1" ; } | sort -V -c 2>/dev/null
+  PATCHFILE="patch6.1"
 fi
 
 echo "Using: $PATCHFILE"
