@@ -1204,20 +1204,6 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 			goto error;
 	}
 
-	if (asus_wmi_dev_is_present(asus,
-			ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
-		asus->camera_led_on_keyboard.name = "platform::camera";
-		asus->camera_led_on_keyboard.max_brightness = 1;
-		asus->camera_led_on_keyboard.brightness_set_blocking =
-						camera_led_on_keyboard_set;
-		asus->camera_led_on_keyboard.default_trigger = "torch";
-
-		rv = led_classdev_register(&asus->platform_device->dev,
-						&asus->camera_led_on_keyboard);
- 		if (rv)
- 			goto error;
- 	}
-
 	if (!kbd_led_read(asus, &led_val, NULL)) {
 		asus->kbd_led_wk = led_val;
 		asus->kbd_led.name = "asus::kbd_backlight";
@@ -1263,6 +1249,9 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 
 		rv = led_classdev_register(&asus->platform_device->dev,
 					   &asus->lightbar_led);
+		if (rv)
+			goto error;
+
 	}
 
 	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
@@ -1277,6 +1266,19 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 		if (rv)
 			goto error;
 	}
+
+	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
+		asus->camera_led_on_keyboard.name = "platform::camera";
+		asus->camera_led_on_keyboard.max_brightness = 1;
+		asus->camera_led_on_keyboard.brightness_set_blocking =
+						camera_led_on_keyboard_set;
+		asus->camera_led_on_keyboard.default_trigger = "torch";
+
+		rv = led_classdev_register(&asus->platform_device->dev,
+						&asus->camera_led_on_keyboard);
+ 		if (rv)
+ 			goto error;
+ 	}
 
 error:
 	if (rv)
