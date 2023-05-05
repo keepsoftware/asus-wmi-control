@@ -211,6 +211,7 @@ struct asus_wmi {
 	struct led_classdev lightbar_led;
 	int lightbar_led_wk;
 	struct led_classdev micmute_led;
+	struct led_classdev camera_led_on_keyboard;
 	struct workqueue_struct *led_workqueue;
 	struct work_struct tpd_led_work;
 	struct work_struct wlan_led_work;
@@ -1159,8 +1160,7 @@ static int camera_led_on_keyboard_set(struct led_classdev *led_cdev,
 	int state = brightness != LED_OFF;
 	int err;
 
-	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD,
-				state, NULL);
+	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD, state, NULL);
 	return err < 0 ? err : 0;
 }
 
@@ -1203,20 +1203,6 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 		if (rv)
 			goto error;
 	}
-
-	if (asus_wmi_dev_is_present(asus,
-			ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
-		asus->camera_led_on_keyboard.name = "platform::camera";
-		asus->camera_led_on_keyboard.max_brightness = 1;
-		asus->camera_led_on_keyboard.brightness_set_blocking =
-						camera_led_on_keyboard_set;
-		asus->camera_led_on_keyboard.default_trigger = "torch";
-
-		rv = led_classdev_register(&asus->platform_device->dev,
-						&asus->camera_led_on_keyboard);
- 		if (rv)
- 			goto error;
- 	}
 
 	if (!kbd_led_read(asus, &led_val, NULL)) {
 		asus->kbd_led_wk = led_val;
@@ -1277,6 +1263,19 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
 		if (rv)
 			goto error;
 	}
+
+	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
+		asus->camera_led_on_keyboard.name = "platform::camera";
+		asus->camera_led_on_keyboard.max_brightness = 1;
+		asus->camera_led_on_keyboard.brightness_set_blocking =
+						camera_led_on_keyboard_set;
+		asus->camera_led_on_keyboard.default_trigger = "torch";
+
+		rv = led_classdev_register(&asus->platform_device->dev,
+						&asus->camera_led_on_keyboard);
+ 		if (rv)
+ 			goto error;
+ 	}
 
 error:
 	if (rv)

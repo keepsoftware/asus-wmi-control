@@ -37,9 +37,9 @@ To install and use this module using dkms:
    ```
    sudo rmmod asus_nb_wmi
    sudo rmmod asus_wmi
-   sudo dkms remove -m asus-wmi -v 1.0 --all
-   sudo dkms build -m asus-wmi -v 1.0
-   sudo dkms install -m asus-wmi -v 1.0
+   sudo dkms remove -m asus-wmi -v 1.0 --all --force
+   sudo dkms build -m asus-wmi -v 1.0 --force
+   sudo dkms install -m asus-wmi -v 1.0 --force
    sudo modprobe asus_wmi 
    sudo modprobe asus_nb_wmi
    sudo dmesg
