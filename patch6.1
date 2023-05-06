@@ -1,7 +1,15 @@
 diff -Naur orig/asus-wmi.c new/asus-wmi.c
---- orig/asus-wmi.c	2023-04-29 10:38:23
-+++ new/asus-wmi.c	2023-04-29 11:33:19
-@@ -1153,6 +1153,17 @@
+--- orig/asus-wmi.c	2023-04-29 11:54:30
++++ new/asus-wmi.c	2023-05-05 15:28:54
+@@ -211,6 +211,7 @@
+ 	struct led_classdev lightbar_led;
+ 	int lightbar_led_wk;
+ 	struct led_classdev micmute_led;
++	struct led_classdev camera_led_on_keyboard;
+ 	struct workqueue_struct *led_workqueue;
+ 	struct work_struct tpd_led_work;
+ 	struct work_struct wlan_led_work;
+@@ -1153,6 +1154,16 @@
  	return err < 0 ? err : 0;
  }
  
@@ -11,8 +19,7 @@ diff -Naur orig/asus-wmi.c new/asus-wmi.c
 +	int state = brightness != LED_OFF;
 +	int err;
 +
-+	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD,
-+				state, NULL);
++	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD, state, NULL);
 +	return err < 0 ? err : 0;
 +}
 +
@@ -27,13 +34,12 @@ diff -Naur orig/asus-wmi.c new/asus-wmi.c
  
  	if (asus->led_workqueue)
  		destroy_workqueue(asus->led_workqueue);
-@@ -1191,6 +1203,20 @@
+@@ -1251,6 +1263,19 @@
  		if (rv)
  			goto error;
  	}
 +
-+	if (asus_wmi_dev_is_present(asus,
-+			ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
++	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_CAMERA_LED_ON_KEYBOARD)) {
 +		asus->camera_led_on_keyboard.name = "platform::camera";
 +		asus->camera_led_on_keyboard.max_brightness = 1;
 +		asus->camera_led_on_keyboard.brightness_set_blocking =
@@ -46,11 +52,11 @@ diff -Naur orig/asus-wmi.c new/asus-wmi.c
 + 			goto error;
 + 	}
  
- 	if (!kbd_led_read(asus, &led_val, NULL)) {
- 		asus->kbd_led_wk = led_val;
+ error:
+ 	if (rv)
 diff -Naur orig/asus-wmi.h new/asus-wmi.h
---- orig/asus-wmi.h	2023-04-29 10:38:31
-+++ new/asus-wmi.h	2023-04-29 11:33:49
+--- orig/asus-wmi.h	2023-04-29 11:54:30
++++ new/asus-wmi.h	2023-05-05 15:27:46
 @@ -21,6 +21,8 @@
  #define ASUS_WMI_BRN_DOWN	0x20
  #define ASUS_WMI_BRN_UP		0x2f
