@@ -1,6 +1,6 @@
 #!/bin/sh
 VERSION=`uname -r | grep -o '^[0-9]\+\.[0-9]\+'`
-# VERSION="6.1"
+VERSION="6.7"
 
 wget "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/drivers/platform/x86/asus-wmi.c?h=linux-$VERSION.y" -O './orig/asus-wmi.c'
 wget "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/plain/drivers/platform/x86/asus-wmi.h?h=linux-$VERSION.y" -O './orig/asus-wmi.h'
@@ -25,6 +25,8 @@ elif { echo $VERSION ; echo "6.3" ; } | sort -V -c 2>/dev/null
   PATCHFILE="patch6.3"
 elif { echo $VERSION ; echo "6.4" ; } | sort -V -c 2>/dev/null
   PATCHFILE="patch6.3"
+elif { echo $VERSION ; echo "6.7" ; } | sort -V -c 2>/dev/null
+  PATCHFILE="patch6.7"
 fi
 
 echo "Using: $PATCHFILE"
